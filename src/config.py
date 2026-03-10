@@ -25,6 +25,13 @@ class Settings(BaseSettings):
     api_timeout_seconds: int = 10
     api_max_retries: int = 3
 
+    # Webhook Settings
+    use_webhook: bool = False  # False = polling, True = webhook
+    webhook_host: str = "0.0.0.0"
+    webhook_port: int = 8443
+    webhook_path: str = "/telegram-webhook"
+    webhook_url: str = ""  # Полный URL: https://domain.com/telegram-webhook
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
