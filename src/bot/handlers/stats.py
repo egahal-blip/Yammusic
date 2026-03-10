@@ -6,6 +6,9 @@ from telegram.ext import ContextTypes
 from src.utils.metrics import metrics
 from src.utils.logger import log
 from src.locale.ru.messages import STATS_MESSAGE
+from src.config import get_settings
+
+settings = get_settings()
 
 
 async def stats_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -17,7 +20,13 @@ async def stats_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     """
     user = update.effective_user
 
-    log.info(f"User {user.id} requested stats")
+    # Проверка авторизации
+    if settings.allowed_user_ids and user.id not in settings.allowed_user_ids:
+        log.warning(f"[UNAUTHORIZED] User {user.id} (@{user.username}) attempted to access stats")
+        await update.message.reply_text("У вас нет прав для выполнения этой команды.")
+        return
+
+    log.info(f"[STATS] User {user.id} (@{user.username}) requested stats")
 
     # Получить сводку метрик
     summary = metrics.get_summary()

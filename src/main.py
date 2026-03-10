@@ -25,7 +25,10 @@ async def main() -> None:
         log.info(f"Starting webhook mode on {settings.webhook_host}:{settings.webhook_port}")
         log.info(f"Webhook URL: {settings.webhook_url}")
 
-        await application.bot.set_webhook(url=settings.webhook_url)
+        await application.bot.set_webhook(
+            url=settings.webhook_url,
+            secret_token=settings.webhook_secret_token if settings.webhook_secret_token else None,
+        )
         log.info("Webhook set successfully")
 
         await application.start()

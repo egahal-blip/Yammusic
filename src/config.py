@@ -7,6 +7,7 @@ class Settings(BaseSettings):
 
     # Telegram Bot
     telegram_bot_token: str
+    allowed_user_ids: list[int] = []  # Список разрешенных user_id для админ-команд
 
     # Yandex.Music
     yandex_music_token: str | None = None
@@ -31,6 +32,7 @@ class Settings(BaseSettings):
     webhook_port: int = 8443
     webhook_path: str = "/telegram-webhook"
     webhook_url: str = ""  # Полный URL: https://domain.com/telegram-webhook
+    webhook_secret_token: str = ""  # Секретный токен для проверки webhook запросов
 
     model_config = SettingsConfigDict(
         env_file=".env",

@@ -3,6 +3,10 @@
 import re
 from typing import Optional
 
+# Максимальная длина пользовательского ввода (для защиты от DoS)
+MAX_MESSAGE_LENGTH = 1000
+MAX_URL_LENGTH = 2048
+
 
 def validate_track_id(track_id: str) -> bool:
     """Валидировать ID трека.
@@ -143,3 +147,33 @@ def extract_numeric_id(text: str) -> Optional[str]:
         return numbers[0]
 
     return None
+
+
+def validate_message_length(text: str, max_length: int = MAX_MESSAGE_LENGTH) -> bool:
+    """Проверить длину сообщения.
+
+    Args:
+        text: Текст для проверки
+        max_length: Максимальная длина
+
+    Returns:
+        True если длина допустима, иначе False
+    """
+    if not text:
+        return False
+    return len(text) <= max_length
+
+
+def validate_url_length(url: str, max_length: int = MAX_URL_LENGTH) -> bool:
+    """Проверить длину URL.
+
+    Args:
+        url: URL для проверки
+        max_length: Максимальная длина
+
+    Returns:
+        True если длина допустима, иначе False
+    """
+    if not url:
+        return False
+    return len(url) <= max_length

@@ -16,8 +16,9 @@ from src.utils.exceptions import (
     RateLimitError,
     TimeoutError as YAMTimeoutError,
 )
-from src.utils.logger import log
+from src.utils.logger import log, sanitize_for_log
 from src.utils.metrics import metrics
+from src.utils.validators import validate_message_length
 from src.config import get_settings
 
 settings = get_settings()
@@ -48,7 +49,14 @@ async def handle_track_link(update: Update, context: ContextTypes.DEFAULT_TYPE) 
     user = update.effective_user
     message_text = update.message.text
 
-    log.info(f"[REQUEST] User {user.id} (@{user.username}): {message_text[:50]}...")
+    # Проверить длину сообщения (защита от DoS)
+    if not validate_message_length(message_text):
+        duration = time.time() - start_time
+        log.warning(f"[INVALID_LENGTH] User {user.id} | Message too long | Duration: {duration:.2f}s")
+        await update.message.reply_text("Сообщение слишком длинное. Максимальная длина: 1000 символов.")
+        return
+
+    log.info(f"[REQUEST] User {user.id} (@{user.username}): {sanitize_for_log(message_text)}")
 
     try:
         # Проверить rate limit
@@ -88,17 +96,17 @@ async def handle_track_link(update: Update, context: ContextTypes.DEFAULT_TYPE) 
 
     except YandexMusicAPIError as e:
         duration = time.time() - start_time
-        log.error(f"[API_ERROR] User {user.id} | Error: {str(e)} | Duration: {duration:.2f}s")
+        log.error(f"[API_ERROR] User {user.id} | Error: {sanitize_for_log(str(e))} | Duration: {duration:.2f}s")
         await update.message.reply_text(formatter.format_error("api_error"))
         metrics.record_request(user.id, success=False, duration=duration, error_type="api_error")
 
-    except RateLimitError as e:
+    except RateLimitError:
         duration = time.time() - start_time
         log.warning(f"[RATE_LIMIT] User {user.id} | Duration: {duration:.2f}s")
         await update.message.reply_text(formatter.format_error("rate_limit"))
         metrics.record_request(user.id, success=False, duration=duration, error_type="rate_limit")
 
-    except YAMTimeoutError as e:
+    except YAMTimeoutError:
         duration = time.time() - start_time
         log.error(f"[TIMEOUT] User {user.id} | Duration: {duration:.2f}s")
         await update.message.reply_text(formatter.format_error("timeout"))
@@ -106,6 +114,6 @@ async def handle_track_link(update: Update, context: ContextTypes.DEFAULT_TYPE) 
 
     except Exception as e:
         duration = time.time() - start_time
-        log.error(f"[ERROR] User {user.id} | Error: {str(e)} | Duration: {duration:.2f}s")
+        log.error(f"[ERROR] User {user.id} | Error: {sanitize_for_log(str(e))} | Duration: {duration:.2f}s")
         await update.message.reply_text(formatter.format_error("unknown"))
         metrics.record_request(user.id, success=False, duration=duration, error_type="unknown")

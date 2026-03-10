@@ -1,9 +1,15 @@
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, ConfigDict
 from typing import Optional
 
 
 class TrackInfo(BaseModel):
     """Модель информации о треке"""
+
+    model_config = ConfigDict(
+        strict=True,  # Строгая валидация типов
+        extra='forbid',  # Запретить дополнительные поля
+        validate_assignment=True,  # Валидация при присваивании
+    )
 
     track_id: str = Field(..., description="ID трека")
     title: str = Field(..., description="Название трека")
