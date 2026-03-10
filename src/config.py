@@ -1,0 +1,38 @@
+from pydantic_settings import BaseSettings, SettingsConfigDict
+from functools import lru_cache
+
+
+class Settings(BaseSettings):
+    """Конфигурация приложения"""
+
+    # Telegram Bot
+    telegram_bot_token: str
+
+    # Yandex.Music
+    yandex_music_token: str | None = None
+
+    # Redis
+    redis_host: str = "localhost"
+    redis_port: int = 6379
+    redis_db: int = 0
+
+    # Application
+    log_level: str = "INFO"
+    rate_limit_per_minute: int = 30
+    cache_ttl_seconds: int = 86400
+
+    # API Settings
+    api_timeout_seconds: int = 10
+    api_max_retries: int = 3
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
+
+
+@lru_cache()
+def get_settings() -> Settings:
+    """Получить Singleton экземпляр настроек"""
+    return Settings()
