@@ -1,6 +1,6 @@
 """Клиент для работы с API Яндекс.Музыки."""
 
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 import asyncio
 
 import yandex_music
@@ -13,6 +13,9 @@ from src.utils.exceptions import (
     TimeoutError as YAMTimeoutError,
 )
 from src.utils.logger import log
+
+if TYPE_CHECKING:
+    from src.services.cache import InMemoryCache
 
 
 class YandexMusicService:
