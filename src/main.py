@@ -1,13 +1,37 @@
 import asyncio
 import sys
+from datetime import datetime, time
 from pathlib import Path
 
 # Добавляем корневую директорию в PYTHONPATH
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from src.bot.app import create_application
+from src.bot.handlers.track import cache
 from src.utils.logger import log, setup_logger
 from src.config import get_settings
+
+
+def seconds_until_midnight() -> float:
+    """Рассчитать количество секунд до следующей полуночи."""
+    now = datetime.now()
+    midnight = datetime.combine(now.date(), time(0, 0))
+    if now >= midnight:
+        midnight = midnight.replace(day=midnight.day + 1)
+    return (midnight - now).total_seconds()
+
+
+async def daily_cache_cleanup() -> None:
+    """Фоновая задача для ежедневной очистки кеша в полночь."""
+    while True:
+        seconds = seconds_until_midnight()
+        log.info(f"Next cache cleanup in {int(seconds // 3600)}h {int((seconds % 3600) // 60)}m")
+
+        await asyncio.sleep(seconds)
+
+        log.info("Running daily cache cleanup...")
+        deleted = await cache.cleanup_expired()
+        log.info(f"Cache cleanup completed: {deleted} expired entries removed")
 
 
 async def main() -> None:
@@ -17,6 +41,9 @@ async def main() -> None:
 
     settings = get_settings()
     application = create_application()
+
+    # Запуск фоновой задачи для очистки кеша
+    cleanup_task = asyncio.create_task(daily_cache_cleanup())
 
     await application.initialize()
 
@@ -55,6 +82,13 @@ async def main() -> None:
         await asyncio.Event().wait()
     except KeyboardInterrupt:
         log.info("Shutting down bot...")
+
+        # Остановить фоновую задачу очистки кеша
+        cleanup_task.cancel()
+        try:
+            await cleanup_task
+        except asyncio.CancelledError:
+            pass
 
         if settings.use_webhook:
             await application.updater.stop_webhook()
