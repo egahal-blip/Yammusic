@@ -7,6 +7,7 @@ class Settings(BaseSettings):
 
     # Telegram Bot
     telegram_bot_token: str
+    telegram_proxy_url: str | None = None  # Прокси для подключения к Telegram (опционально)
     allowed_user_ids: list[int] = []  # Список разрешенных user_id для админ-команд
 
     # Yandex.Music
